@@ -9,18 +9,26 @@
 
 (defn calc-total-por-categoria
   [[categoria compras]]
-  (->>
+  {:categoria categoria
+   :total (->>
     compras
     (map :valor)
-    (reduce +)
-    (println "Categoria:" categoria "- Valor Total:")))
+    (reduce +))})
+
+(defn print-total-por-categoria
+  [data]
+  (let [categoria (get data :categoria)
+        total (get data :total)]
+    (println "-> Categoria:" categoria "- Valor total:" total)))
 
 (defn total-por-categoria
   [lista-de-compra]
+  (println "\nCalculo do valor total comprado organizado por categoria:")
   (->>
     lista-de-compra
     (group-by :categoria)
-    (map calc-total-por-categoria)))
+    (map calc-total-por-categoria)
+    (map print-total-por-categoria)))
 
 (let [lista-de-compra [(model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
                     (model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
