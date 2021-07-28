@@ -24,20 +24,12 @@
 
 (defn total-por-categoria
   [lista-de-compra]
-  (println "\nCalculo do valor total comprado organizado por categoria:")
+  (print "\nCalculo do valor total comprado organizado por categoria:")
   (print-total-por-categoria (->>
              lista-de-compra
              (group-by :categoria)
              (map calc-total-por-categoria))))
 
-(let [lista-de-compra [(model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "roupa")]]
-  (println "Lista de compras" lista-de-compra)
-  (total-por-categoria lista-de-compra))
-
-
-
+(let [lista-de-compras (model-compra/cria-mock-lista-de-compras 100)]
+  (model-compra/print-lista-de-compras lista-de-compras)
+  (total-por-categoria lista-de-compras))
