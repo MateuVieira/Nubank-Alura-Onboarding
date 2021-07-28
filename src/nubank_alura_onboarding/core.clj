@@ -8,13 +8,15 @@
 ;(println "\nTeste - Catão de Crédito:\n" (model-card/cria-novo-cartao "1111-1111-1111-1111", 011, "01/22", 4000))
 ;(println "\nTeste - Catão de Crédito:\n" (model-compra/cria-nova-compra "29/07", 100, "loja", "saude"))
 
+(defn calc-total
+  [data]
+  (reduce + data))
+
 (defn calc-total-por-categoria
   [[categoria compras]]
-  {:categoria categoria
-   :total (->>
-    compras
-    (map :valor)
-    (reduce +))})
+  (let [valor-das-compras (map :valor compras)
+        total (calc-total valor-das-compras)]
+    {:categoria categoria, :total total}))
 
 (defn print-total-por-categoria
   [data]
