@@ -96,9 +96,13 @@
          (recur proximo-numero nova-lista-de-compras)))
      lista-de-compras)))
 
-(let [lista-de-compras (cria-mock-lista-de-compras 10)
-      primeiro-elemento (first lista-de-compras)
-      chaves (keys primeiro-elemento)]
-  (pp/print-table chaves lista-de-compras))
+(defn print-lista-de-compras
+  "Esta função realiza o print de umalista de compras no formato
+  de uma tabela"
+  [lista-de-compras]
+  (let [primeiro-elemento (first lista-de-compras)
+        chaves (keys primeiro-elemento)]
+    (pp/print-table chaves lista-de-compras)))
+
 
 

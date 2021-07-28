@@ -33,5 +33,3 @@
 (let [lista-de-compras (model-compra/cria-mock-lista-de-compras 100)]
   (model-compra/print-lista-de-compras lista-de-compras)
   (total-por-categoria lista-de-compras))
-
-
