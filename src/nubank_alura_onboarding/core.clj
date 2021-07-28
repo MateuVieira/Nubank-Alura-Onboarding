@@ -1,43 +1,37 @@
 (ns nubank-alura-onboarding.core
   (:require [nubank-alura-onboarding.models.cliente :as model-cliente]
             [nubank-alura-onboarding.models.card :as model-card]
-            [nubank-alura-onboarding.models.compra :as model-compra]))
+            [nubank-alura-onboarding.models.compra :as model-compra]
+            [clojure.pprint :as pp]))
 
 ;(println "Teste - Cliente:\n" (model-cliente/cria-novo-cliente "Mateus", "0000.0000.0000-00", "teste@nubank.com.br"))
 ;(println "\nTeste - Catão de Crédito:\n" (model-card/cria-novo-cartao "1111-1111-1111-1111", 011, "01/22", 4000))
 ;(println "\nTeste - Catão de Crédito:\n" (model-compra/cria-nova-compra "29/07", 100, "loja", "saude"))
 
+(defn calc-total
+  [data]
+  (reduce + data))
+
 (defn calc-total-por-categoria
   [[categoria compras]]
-  {:categoria categoria
-   :total (->>
-    compras
-    (map :valor)
-    (reduce +))})
+  (let [valor-das-compras (map :valor compras)
+        total (calc-total valor-das-compras)]
+    {:categoria categoria, :total total}))
 
 (defn print-total-por-categoria
   [data]
-  (let [categoria (get data :categoria)
-        total (get data :total)]
-    (println "-> Categoria:" categoria "- Valor total:" total)))
+  (pp/print-table [:categoria :total] data))
 
 (defn total-por-categoria
   [lista-de-compra]
-  (println "\nCalculo do valor total comprado organizado por categoria:")
-  (->>
-    lista-de-compra
-    (group-by :categoria)
-    (map calc-total-por-categoria)
-    (map print-total-por-categoria)))
+  (print "\nCalculo do valor total comprado organizado por categoria:")
+  (print-total-por-categoria (->>
+             lista-de-compra
+             (group-by :categoria)
+             (map calc-total-por-categoria))))
 
-(let [lista-de-compra [(model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "saude")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "alimentacao")
-                    (model-compra/cria-nova-compra "29/07", 100, "loja", "roupa")]]
-  (println "Lista de compras" lista-de-compra)
-  (total-por-categoria lista-de-compra))
-
+(let [lista-de-compras (model-compra/cria-mock-lista-de-compras 100)]
+  (model-compra/print-lista-de-compras lista-de-compras)
+  (total-por-categoria lista-de-compras))
 
 
