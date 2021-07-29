@@ -1,6 +1,7 @@
 (ns nubank-alura-onboarding.models.compra
   (:require [clojure.pprint :as pp]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [java-time :as jt]))
 
 
 (defn cria-nova-compra
@@ -39,9 +40,12 @@
   "Retorna um data formada por dia e mês no formato:
   dd/mm"
   []
-  (let [dia (rand-numero 30)
-        mes (rand-numero 12)]
-    (str dia "/" mes)))
+  (try
+    (let [dia (rand-numero 30)
+          mes (rand-numero 12)
+          date (jt/local-date 2021 mes dia)]
+      (str date))
+    (catch Exception e (rand-data-de-validade))))
 
 ;(println (rand-data-de-validade))
 
@@ -77,16 +81,6 @@
         valor (get sequencia index)]
     valor))
 
-(defn sort-by-data
-  [compra]
-  (let [data (get compra :data)
-        data-split (str/split data #"/")
-        dias (bigdec (get data-split 0))
-        meses (bigdec (get data-split 1))
-        meses-to-dias (* meses 30)
-        ]
-    (+ dias meses-to-dias)))
-
 (defn cria-mock-lista-de-compras
   "Esta função irá criar um mock de uma lista de compras
   com um número n de transações.
@@ -106,7 +100,7 @@
              compra (cria-nova-compra data-de-validade, valor, loja, categoria)
              nova-lista-de-compras (conj lista-de-compras compra)]
          (recur proximo-numero nova-lista-de-compras)))
-     (sort-by sort-by-data lista-de-compras))))
+     (sort-by :data lista-de-compras))))
 
 (defn print-lista-de-compras
   "Esta função realiza o print de umalista de compras no formato
