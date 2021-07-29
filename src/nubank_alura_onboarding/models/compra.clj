@@ -110,6 +110,61 @@
         chaves (keys primeiro-elemento)]
     (pp/print-table chaves lista-de-compras)))
 
-(let [lista-de-compras (cria-mock-lista-de-compras 10)]
-  (print-lista-de-compras lista-de-compras))
+;(let [lista-de-compras (cria-mock-lista-de-compras 10)]
+;  (print-lista-de-compras lista-de-compras))
+
+(defn calc-total
+  [data]
+  (reduce + data))
+
+(defn calc-total-por-categoria
+  [[categoria compras]]
+  (let [valor-das-compras (map :valor compras)
+        total (calc-total valor-das-compras)]
+    {:categoria categoria, :total total}))
+
+(defn print-total-por-categoria
+  [data]
+  (pp/print-table [:categoria :total] data))
+
+(defn total-por-categoria
+  [lista-de-compra]
+  (print "\nCalculo do valor total comprado organizado por categoria:")
+  (print-total-por-categoria (->>
+                               lista-de-compra
+                               (group-by :categoria)
+                               (map calc-total-por-categoria))))
+
+(defn build-pred-filter
+  [valor, categoria]
+  (fn [compra]
+    (let [valor-compra (get compra categoria)]
+      (= valor valor-compra))))
+
+(defn filtrar-por
+  [categoria, valor, lista-de-compras]
+  (let [pred-filter (build-pred-filter valor categoria)]
+    (->>
+      lista-de-compras
+      (filter pred-filter))))
+
+(defn pega-mes?
+  [compra mes]
+  (let [data (get compra :data)]
+    (->>
+      data
+      (jt/local-date "yyyy-MM-dd")
+      (jt/format "MM")
+      (= mes))))
+
+(defn filtra-por-mes
+  [mes]
+  (fn [lista-de-compras] (pega-mes? lista-de-compras mes)))
+
+(defn calculo-de-fatura-do-mes
+  [lista-de-compras mes]
+  (let [filter-by-mes (filter (filtra-por-mes mes) lista-de-compras)
+        valor-das-compras (map :valor filter-by-mes)
+        total (calc-total valor-das-compras )]
+    (println "\nValor total da Fatura do mês" mes "\n->" total)))
 

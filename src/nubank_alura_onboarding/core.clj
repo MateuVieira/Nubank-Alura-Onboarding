@@ -10,69 +10,15 @@
 ;(println "\nTeste - Catão de Crédito:\n" (model-card/cria-novo-cartao "1111-1111-1111-1111", 011, "01/22", 4000))
 ;(println "\nTeste - Catão de Crédito:\n" (model-compra/cria-nova-compra "29/07", 100, "loja", "saude"))
 
-(defn calc-total
-  [data]
-  (reduce + data))
-
-(defn calc-total-por-categoria
-  [[categoria compras]]
-  (let [valor-das-compras (map :valor compras)
-        total (calc-total valor-das-compras)]
-    {:categoria categoria, :total total}))
-
-(defn print-total-por-categoria
-  [data]
-  (pp/print-table [:categoria :total] data))
-
-(defn total-por-categoria
-  [lista-de-compra]
-  (print "\nCalculo do valor total comprado organizado por categoria:")
-  (print-total-por-categoria (->>
-             lista-de-compra
-             (group-by :categoria)
-             (map calc-total-por-categoria))))
-
-(defn build-pred-filter
-  [valor, categoria]
-  (fn [compra]
-    (let [valor-compra (get compra categoria)]
-      (= valor valor-compra))))
-
-(defn filtrar-por
-  [categoria, valor, lista-de-compras]
-  (let [pred-filter (build-pred-filter valor categoria)]
-    (->>
-      lista-de-compras
-      (filter pred-filter))))
-
-(defn pega-mes?
-  [compra mes]
-  (let [data (get compra :data)]
-    (->>
-      data
-      (jt/local-date "yyyy-MM-dd")
-      (jt/format "MM")
-      (= mes))))
-
-(defn filtra-por-mes
-  [mes]
-  (fn [lista-de-compras] (pega-mes? lista-de-compras mes)))
-
-(defn calculo-de-fatura-do-mes
-  [lista-de-compras mes]
-  (let [filter-by-mes (filter (filtra-por-mes mes) lista-de-compras)
-        valor-das-compras (map :valor filter-by-mes)
-        total (calc-total valor-das-compras )]
-    (println "\nValor total da Fatura do mês" mes "\n->" total)))
 
 ; MAIN
 (let [lista-de-compras (model-compra/cria-mock-lista-de-compras 1000)]
   (model-compra/print-lista-de-compras lista-de-compras)
-  (total-por-categoria lista-de-compras)
-  (calculo-de-fatura-do-mes lista-de-compras "11")
-  (println "\nTeste filtrar GPA:" (filtrar-por :estabelecimento, "GPA", lista-de-compras))
-  (println "\nTeste filtrar Valor:" (filtrar-por :valor, 100, lista-de-compras))
-  (println "\nTeste filtro Data:" (filtrar-por :data, "2021-07-29", lista-de-compras))
-  (println "\nTeste filtro Categoria:" (filtrar-por :categoria, "Saúde", lista-de-compras)))
+  (model-compra/total-por-categoria lista-de-compras)
+  (model-compra/calculo-de-fatura-do-mes lista-de-compras "11")
+  (println "\nTeste filtrar GPA:" (model-compra/filtrar-por :estabelecimento, "GPA", lista-de-compras))
+  (println "\nTeste filtrar Valor:" (model-compra/filtrar-por :valor, 100, lista-de-compras))
+  (println "\nTeste filtro Data:" (model-compra/filtrar-por :data, "2021-07-29", lista-de-compras))
+  (println "\nTeste filtro Categoria:" (model-compra/filtrar-por :categoria, "Saúde", lista-de-compras)))
 
 
