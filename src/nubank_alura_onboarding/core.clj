@@ -3,7 +3,8 @@
             [nubank-alura-onboarding.models.card :as model-card]
             [nubank-alura-onboarding.models.compra :as model-compra]
             [clojure.pprint :as pp]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [java-time :as jt]))
 
 ;(println "Teste - Cliente:\n" (model-cliente/cria-novo-cliente "Mateus", "0000.0000.0000-00", "teste@nubank.com.br"))
 ;(println "\nTeste - Catão de Crédito:\n" (model-card/cria-novo-cartao "1111-1111-1111-1111", 011, "01/22", 4000))
@@ -46,12 +47,12 @@
 
 (defn pega-mes?
   [compra mes]
-  (->
-    compra
-    (get :data)
-    (str/split #"/")
-    (get 1)
-    (= mes)))
+  (let [data (get compra :data)]
+    (->>
+      data
+      (jt/local-date "yyyy-MM-dd")
+      (jt/format "MM")
+      (= mes))))
 
 (defn filtra-por-mes
   [mes]
@@ -71,5 +72,7 @@
   (calculo-de-fatura-do-mes lista-de-compras "11")
   (println "\nTeste filtrar GPA:" (filtrar-por :estabelecimento, "GPA", lista-de-compras))
   (println "\nTeste filtrar Valor:" (filtrar-por :valor, 100, lista-de-compras))
-  (println "\nTeste filtro Data:" (filtrar-por :data, "18/2", lista-de-compras))
+  (println "\nTeste filtro Data:" (filtrar-por :data, "2021-07-29", lista-de-compras))
   (println "\nTeste filtro Categoria:" (filtrar-por :categoria, "Saúde", lista-de-compras)))
+
+
