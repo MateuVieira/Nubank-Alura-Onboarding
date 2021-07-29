@@ -31,12 +31,27 @@
              (group-by :categoria)
              (map calc-total-por-categoria))))
 
+(defn build-pred-filter
+  [valor, categoria]
+  (fn [compra]
+    (let [valor-compra (get compra categoria)]
+      (= valor valor-compra))))
+
+(defn filtrar-por
+  [categoria, valor, lista-de-compras]
+  (let [pred-filter (build-pred-filter valor categoria)]
+    (->>
+      lista-de-compras
+      (filter pred-filter))))
+
 (defn pega-mes?
   [compra mes]
-  (let [data (get compra :data)
-        data-split (str/split data #"/")
-        mes-compra (get data-split 1)]
-    (= mes-compra mes)))
+  (->
+    compra
+    (get :data)
+    (str/split #"/")
+    (get 1)
+    (= mes)))
 
 (defn filtra-por-mes
   [mes]
@@ -50,7 +65,11 @@
     (println "\nValor total da Fatura do mês" mes "\n->" total)))
 
 ; MAIN
-(let [lista-de-compras (model-compra/cria-mock-lista-de-compras 100)]
+(let [lista-de-compras (model-compra/cria-mock-lista-de-compras 1000)]
   (model-compra/print-lista-de-compras lista-de-compras)
   (total-por-categoria lista-de-compras)
-  (calculo-de-fatura-do-mes lista-de-compras "11"))
+  (calculo-de-fatura-do-mes lista-de-compras "11")
+  (println "\nTeste filtrar GPA:" (filtrar-por :estabelecimento, "GPA", lista-de-compras))
+  (println "\nTeste filtrar Valor:" (filtrar-por :valor, 100, lista-de-compras))
+  (println "\nTeste filtro Data:" (filtrar-por :data, "18/2", lista-de-compras))
+  (println "\nTeste filtro Categoria:" (filtrar-por :categoria, "Saúde", lista-de-compras)))
