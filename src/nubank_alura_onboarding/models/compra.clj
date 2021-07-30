@@ -110,9 +110,6 @@
         chaves (keys primeiro-elemento)]
     (pp/print-table chaves lista-de-compras)))
 
-;(let [lista-de-compras (cria-mock-lista-de-compras 10)]
-;  (print-lista-de-compras lista-de-compras))
-
 (defn calc-total
   [data]
   (reduce + data))
@@ -135,18 +132,61 @@
                                (group-by :categoria)
                                (map calc-total-por-categoria))))
 
+(defn convert-string-to-timestamp
+  [date]
+  (let [seq-date (str/split date #"-")
+        seq-interger (mapv #(Integer/parseInt %) seq-date)
+        ano (* (get seq-interger 0) 12)
+        mes (* (+ ano (get seq-interger 1)) 30)
+        dia (+ mes (get seq-interger 2))]
+    dia))
+
+(defn verifica-string
+  [data]
+  (if (string? data)
+    (convert-string-to-timestamp data)
+    data))
+
 (defn build-pred-filter
-  [valor, categoria]
+  ([valor, categoria]
   (fn [compra]
     (let [valor-compra (get compra categoria)]
       (= valor valor-compra))))
+  ([valor-inicial, valor-final, categoria]
+   (fn [compra]
+     (let [valor-compra (verifica-string (get compra categoria))
+           maior-ou-igual (<= valor-inicial valor-compra)
+           menor-ou-igual (>= valor-final valor-compra)]
+       (and maior-ou-igual menor-ou-igual)))))
+
+(defn eh-categoria-data?
+  [categoria]
+  (= categoria :data))
+
+(defn eh-categoria-valor?
+  [categoria]
+  (= categoria :valor))
 
 (defn filtrar-por
-  [categoria, valor, lista-de-compras]
-  (let [pred-filter (build-pred-filter valor categoria)]
-    (->>
-      lista-de-compras
-      (filter pred-filter))))
+  ([categoria, valor, lista-de-compras]
+   (let [pred-filter (build-pred-filter valor, categoria)]
+     (->>
+       lista-de-compras
+       (filter pred-filter))))
+  ([categoria, valor-inicial, valor-final, lista-de-compras]
+   (let [verificacao-data (eh-categoria-data? categoria)
+         verificacao-valor (eh-categoria-valor? categoria)]
+     (if (or verificacao-data verificacao-valor)
+       (case categoria
+         :data (do
+                 (let [valor-inicial-formated  (convert-string-to-timestamp valor-inicial)
+                       valor-final-formated (convert-string-to-timestamp valor-final)
+                       pred-filter (build-pred-filter valor-inicial-formated, valor-final-formated, categoria)]
+                    (filter pred-filter lista-de-compras)))
+         :valor (do
+                 (let [pred-filter (build-pred-filter valor-inicial, valor-final, categoria)]
+                   (filter pred-filter lista-de-compras))))
+       (println "Só é possível realizar essa filtragem com os campos Data e Valor")))))
 
 (defn pega-mes?
   [compra mes]
@@ -167,4 +207,13 @@
         valor-das-compras (map :valor filter-by-mes)
         total (calc-total valor-das-compras )]
     (println "\nValor total da Fatura do mês" mes "\n->" total)))
+
+
+(let [lista-de-compras (cria-mock-lista-de-compras 10)]
+  (print-lista-de-compras lista-de-compras)
+  ;(println "Teste novo filtro:" (filtrar-por :data, "2021-07-01", "2021-07-30", lista-de-compras))
+  (print "\nTeste novo Filtro para valores:")
+  (print-lista-de-compras (filtrar-por :valor, 100, 300, lista-de-compras))
+  (print "\nTeste novo Filtro para datas:")
+  (print-lista-de-compras (filtrar-por :data, "2021-07-01", "2021-07-30", lista-de-compras)))
 
