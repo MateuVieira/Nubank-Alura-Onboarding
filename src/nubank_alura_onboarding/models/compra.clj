@@ -1,6 +1,5 @@
 (ns nubank-alura-onboarding.models.compra
   (:require [clojure.pprint :as pp]
-            [clojure.string :as str]
             [java-time :as jt]))
 
 
@@ -115,16 +114,41 @@
   (reduce + data))
 
 (defn calc-total-por-categoria
+  "Esta funcao realiza a selecao dos dados de valor para o calculo do
+  valor total gasto com uma determinada categoria.
+
+  Input:
+  mapa => categoria  => chave
+       => compras    => mapa de compra
+
+  Ouput:
+  mapa => categoria  => chave
+       => total      => int
+  "
   [[categoria compras]]
   (let [valor-das-compras (map :valor compras)
         total (calc-total valor-das-compras)]
     {:categoria categoria, :total total}))
 
 (defn print-total-por-categoria
+  "Funcao dedicada a realizar o print no console dos dados de saida
+  da funcao total-por-categoria.
+  "
   [data]
   (pp/print-table [:categoria :total] data))
 
 (defn total-por-categoria
+  "Esta funcao realiza um calculo utilizando os dados de categoria
+  de uma lista de compras, este calculo viza agrupor os dados por
+  os diferentes valores e fazer a soma total por cada valor.
+
+  Input:
+  lista-de-compra  => seq de mapas de compras
+
+  Ouput:
+  Um print no console do resultado do calculo no formato de uma
+  tabela.
+  "
   [lista-de-compra]
   (print "\nCalculo do valor total comprado organizado por categoria:")
   (print-total-por-categoria (->>
@@ -133,21 +157,40 @@
                                (map calc-total-por-categoria))))
 
 (defn convert-string-to-timestamp
+  "Esta funcao converte um dado do tipo Data String para
+  um valor numerico referente ao timestamp daquele dado.
+
+  Input:
+  date  =>  string  => 'yyyy-MM-dd'
+
+  Ouput:
+  timestamp => int
+  "
   [date]
-  (let [seq-date (str/split date #"-")
-        seq-interger (mapv #(Integer/parseInt %) seq-date)
-        ano (* (get seq-interger 0) 12)
-        mes (* (+ ano (get seq-interger 1)) 30)
-        dia (+ mes (get seq-interger 2))]
-    dia))
+  (->>
+    date
+    (jt/local-date "yyyy-MM-dd")
+    (jt/to-sql-timestamp)
+    (jt/to-millis-from-epoch)))
 
 (defn verifica-string
+  "Esta funcao verifica se o dado de entrada eh do tipo string,
+  se for ele converte para este dado para um tipo numerico. No
+  momento so esta implementado como converter dados do tipo
+  Data utilizados no mapa de compra."
   [data]
   (if (string? data)
     (convert-string-to-timestamp data)
     data))
 
 (defn build-pred-filter
+  "Esta funcao se destina a criacao de predicado para o auxilio
+  da funcao filtrar-por, assim permitindo passar mais dados e
+  fazer um filtragem mais complexa.
+
+  Obs.: Ainda eh necessario se realizar uma validacao de categoria
+  ja que a comparacao feita espera dado numericos e a nossa entrada
+  para o caso de Data eh uma string."
   ([valor, categoria]
   (fn [compra]
     (let [valor-compra (get compra categoria)]
@@ -168,6 +211,28 @@
   (= categoria :valor))
 
 (defn filtrar-por
+  "Esta funcao lida com o processo de filtragem de dados de uma certa categoria
+  de um mapa de compra. Ela funciona com duas entradas, uma destinada a filtrar
+  uma categoria por um determinado valor e a outra filtrar uma categoria por um
+  range de valores.
+
+  Input 1:
+  categoria         => chaves aceitas (:data :categoria :valor :estabelecimento)
+  valor             => string         (:data :categoria :estabelecimento)
+                    => int            (:valor)
+  lista-de-compras  => seq de mapas de compras
+
+  Input 2:
+  categoria         => chaves aceitas (:data :valor)
+  valor-inicial     => string         (:data)
+                    => int            (:valor)
+  valor-final       => string         (:data)
+                    => int            (:valor)
+  lista-de-compras  => seq de mapas de compras
+
+  Output:
+  Um objeto seq com os dados filtrados segundo os parametros de entrada.
+  "
   ([categoria, valor, lista-de-compras]
    (let [pred-filter (build-pred-filter valor, categoria)]
      (->>
@@ -189,6 +254,16 @@
        (println "Só é possível realizar essa filtragem com os campos Data e Valor")))))
 
 (defn pega-mes?
+  "Esta funcao eh utilizada como predicado para a realizacao do filtro
+  de data de uma lista de compras. Nela será selecionado o campo Data
+  da lista e com esses dado a conversão para o tipo java.time.LocalDate
+  para assim fazer um processo de formatacao para retirar o valor do
+  campo mes para a realizacao da verificao.
+
+  Input:
+  compra => mapa do tipo compra
+  mes    => string
+  "
   [compra mes]
   (let [data (get compra :data)]
     (->>
@@ -198,10 +273,23 @@
       (= mes))))
 
 (defn filtra-por-mes
+  "Funcao auxiliar para a realização do filtro de calculo de fatura.
+  Nesta funcao estamos recebendo o dado de mes e criando um funcao
+  lambda para servir como predicado para o filtro."
   [mes]
   (fn [lista-de-compras] (pega-mes? lista-de-compras mes)))
 
 (defn calculo-de-fatura-do-mes
+  "Esta funcao realiza um filtro pelo dados da lista de compras utilizando a categoria (Chave) data
+  para realizar um filtro por um determinado mes, com estes dados eh feito um calculo para saber o
+  valor gasto naquele mes.
+
+  Input:
+  lista-de-compras  => seq
+  mes               => string
+
+  Output:
+  Print com uma mensagem e o valor gasto."
   [lista-de-compras mes]
   (let [filter-by-mes (filter (filtra-por-mes mes) lista-de-compras)
         valor-das-compras (map :valor filter-by-mes)
@@ -217,3 +305,4 @@
   (print "\nTeste novo Filtro para datas:")
   (print-lista-de-compras (filtrar-por :data, "2021-07-01", "2021-07-30", lista-de-compras)))
 
+(println "\n\n\n------------- END TEST ------------------\n\n")
