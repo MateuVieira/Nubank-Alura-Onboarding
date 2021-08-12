@@ -16,63 +16,76 @@
 (defn apaga-banco! []
   (d/delete-database db-uri))
 
-(def schema [; Produtos
-             {:db/ident       :produto/id
+(def schema [; Cliente
+             {:db/ident       :cliente/id
               :db/valueType   :db.type/uuid
               :db/cardinality :db.cardinality/one
               :db/unique      :db.unique/identity
-              :db/doc         "O id de um produto"
               }
-             {:db/ident       :produto/nome
+             {:db/ident       :cliente/nome
               :db/valueType   :db.type/string
               :db/cardinality :db.cardinality/one
-              :db/doc         "O nome de um produto"
               }
-             {:db/ident       :produto/slug
+             {:db/ident       :cliente/cpf
               :db/valueType   :db.type/string
               :db/cardinality :db.cardinality/one
-              :db/doc         "O caminho para acessar esse produto via HTTP"
               }
-             {:db/ident       :produto/preco
-              :db/valueType   :db.type/bigdec
-              :db/cardinality :db.cardinality/one
-              :db/doc         "O preço de um produto com precisão monetária"
-              }
-             {:db/ident       :produto/palavra-chave
+             {:db/ident       :cliente/email
               :db/valueType   :db.type/string
-              :db/cardinality :db.cardinality/many}
-             {:db/ident       :produto/categoria
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :cliente/cartao
               :db/valueType   :db.type/ref
               :db/cardinality :db.cardinality/one
-              :db/doc         "A referencia da categoria do produto"
-              }
-             {:db/ident       :produto/estoque
-              :db/valueType   :db.type/long
-              :db/cardinality :db.cardinality/one
-              :db/doc         "O estoque de um produto"
-              }
-             {:db/ident       :produto/digital
-              :db/valueType   :db.type/boolean
-              :db/cardinality :db.cardinality/one
-              :db/doc         "Informação se o produto é digital"
               }
 
-             ; Categorias
-             {:db/ident       :categoria/id
+             ; Compra
+             {:db/ident       :compra/id
               :db/valueType   :db.type/uuid
               :db/cardinality :db.cardinality/one
               :db/unique      :db.unique/identity
-              :db/doc         "O id de um categoria"
               }
-             {:db/ident       :categoria/nome
+             {:db/ident       :compra/data
               :db/valueType   :db.type/string
               :db/cardinality :db.cardinality/one
-              :db/doc         "O nome de um categoria"
+              }
+             {:db/ident       :compra/valor
+              :db/valueType   :db.type/bigdec
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :compra/estabelecimento
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :compra/categoria
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :compra/cartao
+              :db/valueType   :db.type/ref
+              :db/cardinality :db.cardinality/one
               }
 
-             ; Transaçôes
-             {:db/ident       :tx-data/ip
+             ; Cartão
+             {:db/ident       :cartao/id
+              :db/valueType   :db.type/uuid
+              :db/cardinality :db.cardinality/one
+              :db/unique      :db.unique/identity
+              }
+             {:db/ident       :cartao/numero
               :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :cartao/cvv
+              :db/valueType   :db.type/long
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :cartao/validade
+              :db/valueType   :db.type/string
+              :db/cardinality :db.cardinality/one
+              }
+             {:db/ident       :cartao/limite
+              :db/valueType   :db.type/bigdec
               :db/cardinality :db.cardinality/one
               }
              ])
