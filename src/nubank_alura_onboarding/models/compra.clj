@@ -1,9 +1,19 @@
 (ns nubank-alura-onboarding.models.compra
   (:require [clojure.pprint :as pp]
-            [java-time :as jt]))
+            [java-time :as jt]
+            [schema.core :as s]
+            [nubank-alura-onboarding.models.common :as m-common]))
 
+(s/def Compra
+  {:compra/id                            java.util.UUID
+   (s/optional-key :compra/data)            s/Str
+   (s/optional-key :compra/valor)           s/Num
+   (s/optional-key :compra/estabelecimento) s/Str
+   (s/optional-key :compra/categoria)       s/Str})
 
-(defn cria-nova-compra
+(s/def ListaDeCompra [Compra])
+
+(s/defn cria-nova-compra :- Compra
   "Input:
     Data             =>   String
     Valor            =>   Int
@@ -17,14 +27,28 @@
     :estabelecimento
     :categoria
    }"
-  [data, valor, estabelecimento, categoria]
-  {:data            data
-   :valor           valor
-   :estabelecimento estabelecimento
-   :categoria       categoria})
 
-;(println "Teste campra:")
-;(map println (cria-nova-compra "29/07", 100, "loja", "saude"))
+  ([data :- s/Str
+    valor :- s/Num
+    estabelecimento :- s/Str
+    categoria :- s/Str]
+   (cria-nova-compra (m-common/cria-uuid) data, valor, estabelecimento, categoria))
+  ([id :- java.util.UUID
+    data :- s/Str
+    valor :- s/Num
+    estabelecimento :- s/Str
+    categoria :- s/Str]
+   {:compra/id              id
+    :compra/data            data
+    :compra/valor           valor
+    :compra/estabelecimento estabelecimento
+    :compra/categoria       categoria}))
+
+; Teste compra
+;(let [compra (cria-nova-compra "29/07", 100, "loja", "saude")]
+;  (println "Teste campra:")
+;  (println "Teste schema:" (s/validate Compra compra))
+;  (mapv println compra))
 
 (defn rand-numero
   "Retorna um número inteiro entre 1 e o valor limite"
@@ -80,14 +104,14 @@
         valor (get sequencia index)]
     valor))
 
-(defn cria-mock-lista-de-compras
+(s/defn cria-mock-lista-de-compras :- ListaDeCompra
   "Esta função irá criar um mock de uma lista de compras
   com um número n de transações.
 
   n => Int"
-  ([numero]
+  ([numero :- s/Int]
    (cria-mock-lista-de-compras numero []))
-  ([numero lista-de-compras]
+  ([numero :- s/Int, lista-de-compras]
    (if (not (< numero 0))
      (do
        ;(println "Numero:" numero "Count:" (count lista-de-compras) "Lista de compras:" lista-de-compras )
@@ -113,20 +137,22 @@
   [data]
   (reduce + data))
 
-(defn calc-total-por-categoria
+(s/def GroupCompras {:categoria s/Keyword, :total s/Num})
+
+(s/defn calc-total-por-categoria :- GroupCompras
   "Esta funcao realiza a selecao dos dados de valor para o calculo do
   valor total gasto com uma determinada categoria.
 
   Input:
   mapa => categoria  => chave
-       => compras    => mapa de compra
+       => compras    => lista de compra
 
   Ouput:
   mapa => categoria  => chave
        => total      => int
   "
-  [[categoria compras]]
-  (let [valor-das-compras (map :valor compras)
+  [[categoria, compras] :- {s/Keyword ListaDeCompra}]
+  (let [valor-das-compras (map :compra/valor compras)
         total (calc-total valor-das-compras)]
     {:categoria categoria, :total total}))
 
@@ -137,7 +163,7 @@
   [data]
   (pp/print-table [:categoria :total] data))
 
-(defn total-por-categoria
+(s/defn total-por-categoria
   "Esta funcao realiza um calculo utilizando os dados de categoria
   de uma lista de compras, este calculo viza agrupor os dados por
   os diferentes valores e fazer a soma total por cada valor.
@@ -149,11 +175,11 @@
   Um print no console do resultado do calculo no formato de uma
   tabela.
   "
-  [lista-de-compra]
+  [lista-de-compra :- ListaDeCompra]
   (print "\nCalculo do valor total comprado organizado por categoria:")
   (print-total-por-categoria (->>
                                lista-de-compra
-                               (group-by :categoria)
+                               (group-by :compra/categoria)
                                (map calc-total-por-categoria))))
 
 (defn convert-string-to-timestamp
@@ -192,9 +218,9 @@
   ja que a comparacao feita espera dado numericos e a nossa entrada
   para o caso de Data eh uma string."
   ([valor, categoria]
-  (fn [compra]
-    (let [valor-compra (get compra categoria)]
-      (= valor valor-compra))))
+   (fn [compra]
+     (let [valor-compra (get compra categoria)]
+       (= valor valor-compra))))
   ([valor-inicial, valor-final, categoria]
    (fn [compra]
      (let [valor-compra (verifica-string (get compra categoria))
@@ -204,53 +230,53 @@
 
 (defn eh-categoria-data?
   [categoria]
-  (= categoria :data))
+  (= categoria :compra/data))
 
 (defn eh-categoria-valor?
   [categoria]
-  (= categoria :valor))
+  (= categoria :compra/valor))
 
-(defn filtrar-por
+(s/defn filtrar-por
   "Esta funcao lida com o processo de filtragem de dados de uma certa categoria
   de um mapa de compra. Ela funciona com duas entradas, uma destinada a filtrar
   uma categoria por um determinado valor e a outra filtrar uma categoria por um
   range de valores.
 
   Input 1:
-  categoria         => chaves aceitas (:data :categoria :valor :estabelecimento)
-  valor             => string         (:data :categoria :estabelecimento)
-                    => int            (:valor)
+  categoria         => chaves aceitas (:compra/data :compra/categoria :compra/valor :compra/estabelecimento)
+  valor             => string         (:compra/data :compra/categoria :compra/estabelecimento)
+                    => int            (:compra/valor)
   lista-de-compras  => seq de mapas de compras
 
   Input 2:
-  categoria         => chaves aceitas (:data :valor)
-  valor-inicial     => string         (:data)
-                    => int            (:valor)
-  valor-final       => string         (:data)
-                    => int            (:valor)
+  categoria         => chaves aceitas (:compra/data :compra/valor)
+  valor-inicial     => string         (:compra/data)
+                    => int            (:compra/valor)
+  valor-final       => string         (:compra/data)
+                    => int            (:compra/valor)
   lista-de-compras  => seq de mapas de compras
 
   Output:
   Um objeto seq com os dados filtrados segundo os parametros de entrada.
   "
-  ([categoria, valor, lista-de-compras]
+  ([categoria :- s/Keyword, valor, lista-de-compras :- ListaDeCompra]
    (let [pred-filter (build-pred-filter valor, categoria)]
      (->>
        lista-de-compras
        (filter pred-filter))))
-  ([categoria, valor-inicial, valor-final, lista-de-compras]
+  ([categoria :- s/Keyword, valor-inicial, valor-final, lista-de-compras :- ListaDeCompra]
    (let [verificacao-data (eh-categoria-data? categoria)
          verificacao-valor (eh-categoria-valor? categoria)]
      (if (or verificacao-data verificacao-valor)
        (case categoria
-         :data (do
-                 (let [valor-inicial-formated  (convert-string-to-timestamp valor-inicial)
+         :compra/data (do
+                 (let [valor-inicial-formated (convert-string-to-timestamp valor-inicial)
                        valor-final-formated (convert-string-to-timestamp valor-final)
                        pred-filter (build-pred-filter valor-inicial-formated, valor-final-formated, categoria)]
-                    (filter pred-filter lista-de-compras)))
-         :valor (do
-                 (let [pred-filter (build-pred-filter valor-inicial, valor-final, categoria)]
-                   (filter pred-filter lista-de-compras))))
+                   (filter pred-filter lista-de-compras)))
+         :compra/valor (do
+                  (let [pred-filter (build-pred-filter valor-inicial, valor-final, categoria)]
+                    (filter pred-filter lista-de-compras))))
        (println "Só é possível realizar essa filtragem com os campos Data e Valor")))))
 
 (defn pega-mes?
@@ -265,7 +291,7 @@
   mes    => string
   "
   [compra mes]
-  (let [data (get compra :data)]
+  (let [data (get compra :compra/data)]
     (->>
       data
       (jt/local-date "yyyy-MM-dd")
@@ -279,30 +305,34 @@
   [mes]
   (fn [lista-de-compras] (pega-mes? lista-de-compras mes)))
 
-(defn calculo-de-fatura-do-mes
+(s/defn calculo-de-fatura-do-mes
   "Esta funcao realiza um filtro pelo dados da lista de compras utilizando a categoria (Chave) data
   para realizar um filtro por um determinado mes, com estes dados eh feito um calculo para saber o
   valor gasto naquele mes.
 
   Input:
-  lista-de-compras  => seq
+  lista-de-compras  => ListaDeCompra
   mes               => string
 
   Output:
   Print com uma mensagem e o valor gasto."
-  [lista-de-compras mes]
-  (let [filter-by-mes (filter (filtra-por-mes mes) lista-de-compras)
-        valor-das-compras (map :valor filter-by-mes)
-        total (calc-total valor-das-compras )]
-    (println "\nValor total da Fatura do mês" mes "\n->" total)))
+  [lista-de-compras :- ListaDeCompra, mes :- s/Str]
+  (->>
+    lista-de-compras
+    (filter (filtra-por-mes mes))
+    (map :compra/valor)
+    (calc-total)
+    (println "\nValor total da Fatura do mês" mes "\n->"))
+  )
 
 
 (let [lista-de-compras (cria-mock-lista-de-compras 10)]
+  (println "Teste schema lista:" (s/validate ListaDeCompra lista-de-compras))
   (print-lista-de-compras lista-de-compras)
-  ;(println "Teste novo filtro:" (filtrar-por :data, "2021-07-01", "2021-07-30", lista-de-compras))
   (print "\nTeste novo Filtro para valores:")
-  (print-lista-de-compras (filtrar-por :valor, 100, 300, lista-de-compras))
+  (print-lista-de-compras (filtrar-por :compra/valor, 100, 300, lista-de-compras))
   (print "\nTeste novo Filtro para datas:")
-  (print-lista-de-compras (filtrar-por :data, "2021-07-01", "2021-07-30", lista-de-compras)))
+  (print-lista-de-compras (filtrar-por :compra/data, "2021-07-01", "2021-07-30", lista-de-compras))
+  )
 
 (println "\n\n\n------------- END TEST ------------------\n\n")
