@@ -2,14 +2,16 @@
   (:require [clojure.pprint :as pp]
             [java-time :as jt]
             [schema.core :as s]
-            [nubank-alura-onboarding.models.common :as m-common]))
+            [nubank-alura-onboarding.models.common :as m-common]
+            [nubank-alura-onboarding.models.card :as m-card]))
 
 (s/def Compra
-  {:compra/id                            java.util.UUID
+  {:compra/id                               java.util.UUID
    (s/optional-key :compra/data)            s/Str
    (s/optional-key :compra/valor)           s/Num
    (s/optional-key :compra/estabelecimento) s/Str
-   (s/optional-key :compra/categoria)       s/Str})
+   (s/optional-key :compra/categoria)       s/Str
+   :compra/cartao                           m-card/Cartao})
 
 (s/def ListaDeCompra [Compra])
 
@@ -31,18 +33,21 @@
   ([data :- s/Str
     valor :- s/Num
     estabelecimento :- s/Str
-    categoria :- s/Str]
-   (cria-nova-compra (m-common/cria-uuid) data, valor, estabelecimento, categoria))
+    categoria :- s/Str
+    cartao :- m-card/Cartao]
+   (cria-nova-compra (m-common/cria-uuid) data, valor, estabelecimento, categoria, cartao))
   ([id :- java.util.UUID
     data :- s/Str
     valor :- s/Num
     estabelecimento :- s/Str
-    categoria :- s/Str]
+    categoria :- s/Str
+    cartao :- m-card/Cartao]
    {:compra/id              id
     :compra/data            data
     :compra/valor           valor
     :compra/estabelecimento estabelecimento
-    :compra/categoria       categoria}))
+    :compra/categoria       categoria
+    :compra/cartao          cartao}))
 
 ; Teste compra
 ;(let [compra (cria-nova-compra "29/07", 100, "loja", "saude")]
@@ -120,7 +125,7 @@
              valor (rand-valor-de-100)
              loja (rand-seq-get-item lista-de-estabelecimentos)
              categoria (rand-seq-get-item lista-de-categorias)
-             compra (cria-nova-compra data-de-validade, valor, loja, categoria)
+             compra (cria-nova-compra data-de-validade, valor, loja, categoria, #uuid "c4fab8f8-2c09-473b-9aff-848000506390")
              nova-lista-de-compras (conj lista-de-compras compra)]
          (recur proximo-numero nova-lista-de-compras)))
      (sort-by :data lista-de-compras))))
@@ -270,13 +275,13 @@
      (if (or verificacao-data verificacao-valor)
        (case categoria
          :compra/data (do
-                 (let [valor-inicial-formated (convert-string-to-timestamp valor-inicial)
-                       valor-final-formated (convert-string-to-timestamp valor-final)
-                       pred-filter (build-pred-filter valor-inicial-formated, valor-final-formated, categoria)]
-                   (filter pred-filter lista-de-compras)))
+                        (let [valor-inicial-formated (convert-string-to-timestamp valor-inicial)
+                              valor-final-formated (convert-string-to-timestamp valor-final)
+                              pred-filter (build-pred-filter valor-inicial-formated, valor-final-formated, categoria)]
+                          (filter pred-filter lista-de-compras)))
          :compra/valor (do
-                  (let [pred-filter (build-pred-filter valor-inicial, valor-final, categoria)]
-                    (filter pred-filter lista-de-compras))))
+                         (let [pred-filter (build-pred-filter valor-inicial, valor-final, categoria)]
+                           (filter pred-filter lista-de-compras))))
        (println "Só é possível realizar essa filtragem com os campos Data e Valor")))))
 
 (defn pega-mes?
@@ -326,13 +331,13 @@
   )
 
 
-(let [lista-de-compras (cria-mock-lista-de-compras 10)]
-  (println "Teste schema lista:" (s/validate ListaDeCompra lista-de-compras))
-  (print-lista-de-compras lista-de-compras)
-  (print "\nTeste novo Filtro para valores:")
-  (print-lista-de-compras (filtrar-por :compra/valor, 100, 300, lista-de-compras))
-  (print "\nTeste novo Filtro para datas:")
-  (print-lista-de-compras (filtrar-por :compra/data, "2021-07-01", "2021-07-30", lista-de-compras))
-  )
+;(let [lista-de-compras (cria-mock-lista-de-compras 10)]
+;  (println "Teste schema lista:" (s/validate ListaDeCompra lista-de-compras))
+;  (print-lista-de-compras lista-de-compras)
+;  (print "\nTeste novo Filtro para valores:")
+;  (print-lista-de-compras (filtrar-por :compra/valor, 100, 300, lista-de-compras))
+;  (print "\nTeste novo Filtro para datas:")
+;  (print-lista-de-compras (filtrar-por :compra/data, "2021-07-01", "2021-07-30", lista-de-compras))
+;  )
 
 (println "\n\n\n------------- END TEST ------------------\n\n")
