@@ -3,9 +3,10 @@
             [nubank-alura-onboarding.models.common :as m-common]))
 
 (s/def Cliente
-  {:nome  s/Str
-   :cpf   s/Str
-   :email s/Str})
+  {:cliente/id    java.util.UUID
+   :cliente/nome  s/Str
+   :cliente/cpf   s/Str
+   :cliente/email s/Str})
 
 (s/defn cria-novo-cliente :- Cliente
   "Input:
@@ -19,10 +20,16 @@
     :cpf
     :email
    }"
-  [nome :- s/Str, cpf :- s/Str, email :- s/Str]
-  {:nome nome
-   :cpf cpf
-   :email email})
+  ([nome :- s/Str, cpf :- s/Str, email :- s/Str]
+   (cria-novo-cliente (m-common/cria-uuid), nome, cpf, email))
+  ([uuid :- java.util.UUID
+    nome :- s/Str
+    cpf :- s/Str
+    email :- s/Str]
+   {:cliente/id    uuid
+    :cliente/nome  nome
+    :cliente/cpf   cpf
+    :cliente/email email}))
 
 (let [cliente (cria-novo-cliente "Mateus" "0000.0000.0000-00" "teste@nubank.com.br")]
   (println "Teste cria cliente:")
