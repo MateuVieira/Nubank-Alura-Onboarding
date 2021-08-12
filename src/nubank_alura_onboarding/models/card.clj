@@ -2,11 +2,11 @@
   (:require [schema.core :as s]
             [nubank-alura-onboarding.models.common :as m-common]))
 
-(s/def Cartao {:card/id                        java.util.UUID
-               (s/optional-key :card/numero)   s/Str
-               (s/optional-key :card/cvv)      s/Int
-               (s/optional-key :card/validade) s/Str
-               (s/optional-key :card/limite)   s/Num})
+(s/def Cartao {:cartao/id                        java.util.UUID
+               (s/optional-key :cartao/numero)   s/Str
+               (s/optional-key :cartao/cvv)      s/Int
+               (s/optional-key :cartao/validade) s/Str
+               (s/optional-key :cartao/limite)   s/Num})
 
 (s/defn cria-novo-cartao :- Cartao
   "Input:
@@ -29,13 +29,17 @@
     cvv :- s/Int
     validade :- s/Str
     limite :- s/Num]
-   {:card/id       uuid
-    :card/numero   numero
-    :card/cvv      cvv
-    :card/validade validade
-    :card/limite   limite}))
+   {:cartao/id       uuid
+    :cartao/numero   numero
+    :cartao/cvv      cvv
+    :cartao/validade validade
+    :cartao/limite   limite}))
 
-(let [cartao (cria-novo-cartao "1111-1111-1111-1111", 001, "01/21", 4000)]
+(s/defn gera-um-cartao :- Cartao
+  []
+  (cria-novo-cartao "1111-1111-1111-1111", 001, "01/21", 4000M))
+
+(let [cartao (cria-novo-cartao "1111-1111-1111-1111", 001, "01/21", 4000M)]
   (println "Teste cartão de crédito:")
   (println "Teste schema:" (s/validate Cartao cartao))
   (map println cartao))
